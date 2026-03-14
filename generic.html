@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IBC Calculator">
+<title>IBC → Real Estate Calculator</title>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg:#020c18; --bg2:#061220; --panel:#07172a; --card:#0b1f35; --border:#152840; --border2:#0e1e30;
+  --blue:#3b82f6; --blue-lt:#60a5fa; --green:#34d399; --red:#f87171; --amber:#fbbf24; --purple:#a78bfa;
+  --text:#dde8f8; --text2:#7a9ab8; --text3:#4a6a88; --text4:#2a3a50;
+  --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --display: Georgia, 'Times New Roman', serif;
+}
+html,body { background:var(--bg); min-height:100vh; color:var(--text); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+
+.hdr { padding:18px 24px 12px; border-bottom:1px solid var(--border2); background:rgba(6,18,32,0.95); backdrop-filter:blur(16px); position:sticky; top:0; z-index:100; }
+.hdr-eye { font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--blue); margin-bottom:4px; }
+.hdr h1 { font-family:var(--display); font-size:22px; font-weight:700; }
+.hdr h1 em { color:var(--blue-lt); font-style:normal; }
+.hdr-sub { font-size:11px; color:var(--text3); margin-top:4px; }
+
+.tabs { display:flex; padding:0 24px; border-bottom:1px solid var(--border2); background:rgba(2,12,24,0.9); position:sticky; top:73px; z-index:99; }
+.tab { padding:8px 16px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); background:transparent; border:none; border-bottom:2px solid transparent; cursor:pointer; font-family:var(--sans); transition:all 0.15s; margin-bottom:-1px; }
+.tab.on { color:var(--blue-lt); border-bottom-color:var(--blue); }
+.pane { display:none; } .pane.on { display:block; }
+
+.inputs-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--border2); }
+.inp-panel { background:var(--panel); padding:20px; }
+.inp-title { font-size:9px; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border2); }
+
+.sl-wrap { margin-bottom:18px; }
+.sl-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px; }
+.sl-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:0.06em; }
+.sl-val { font-family:var(--mono); font-size:15px; font-weight:600; color:var(--text); }
+.sl-sub { font-size:10px; color:var(--text3); margin-bottom:5px; line-height:1.4; }
+input[type=range] { width:100%; appearance:none; -webkit-appearance:none; height:2px; border-radius:2px; outline:none; cursor:pointer; background:var(--border); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:13px; height:13px; border-radius:50%; background:var(--blue); box-shadow:0 0 8px rgba(59,130,246,0.6); cursor:pointer; }
+input[type=range]::-moz-range-thumb { width:13px; height:13px; border-radius:50%; background:var(--blue); border:none; cursor:pointer; }
+
+.stat-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+.stat-mini { padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:8px; }
+.stat-mini-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px; }
+.stat-mini-val { font-family:var(--mono); font-size:15px; font-weight:600; }
+
+.repay-wrap { padding:24px; }
+.mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+.mode-btn { padding:18px; background:var(--card); border:1px solid var(--border); border-radius:12px; cursor:pointer; text-align:left; transition:all 0.15s; }
+.mode-btn.on { background:linear-gradient(135deg,#0f2a50,#07182e); border-color:var(--blue); box-shadow:0 0 24px rgba(59,130,246,0.12); }
+.mode-icon { font-size:22px; margin-bottom:8px; }
+.mode-label { font-size:13px; font-weight:600; color:#c8d8ee; margin-bottom:6px; }
+.mode-btn.on .mode-label { color:var(--blue-lt); }
+.mode-desc { font-size:10px; color:var(--text3); line-height:1.6; }
+
+.cf-panel { background:linear-gradient(135deg,#071e14,#041208); border:1px solid #1a3a28; border-radius:12px; padding:20px; margin-bottom:20px; }
+.cf-title { font-size:9px; color:var(--green); text-transform:uppercase; letter-spacing:0.14em; margin-bottom:10px; }
+.cf-body { font-size:11px; color:#6a9a80; line-height:1.8; margin-bottom:16px; }
+.cf-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.cf-stat { padding:12px; background:rgba(0,0,0,0.3); border:1px solid #1a3a28; border-radius:8px; }
+.cf-stat-label { font-size:9px; color:#3a6a50; text-transform:uppercase; margin-bottom:4px; }
+.cf-stat-val { font-family:var(--mono); font-size:17px; font-weight:700; }
+
+.refi-panel { background:linear-gradient(135deg,#1a1200,#0d0900); border:1px solid #3a2800; border-radius:12px; padding:20px; margin-bottom:20px; }
+.refi-title { font-size:9px; color:var(--amber); text-transform:uppercase; letter-spacing:0.14em; margin-bottom:16px; }
+.refi-sliders { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.refi-math { background:rgba(0,0,0,0.4); border:1px solid #2a1a00; border-radius:10px; padding:16px; margin-bottom:12px; }
+.refi-math-title { font-size:9px; color:#6a5a30; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; }
+.refi-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #1a1200; font-size:11px; }
+.refi-row:last-child { border-bottom:none; }
+.refi-row-label { color:#8a7a50; }
+.refi-warn { padding:10px 14px; background:#1a0800; border:1px solid var(--red); border-radius:8px; font-size:10px; color:var(--red); display:none; margin-top:8px; }
+
+.summary-wrap { padding:20px 24px; }
+.compare-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border2); border-radius:12px; overflow:hidden; margin-bottom:20px; }
+.compare-col { background:var(--panel); padding:20px; }
+.compare-col.hl { background:linear-gradient(160deg,#0d2545,#071830); }
+.compare-hdr { margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border2); }
+.compare-icon { font-size:18px; margin-bottom:6px; }
+.compare-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--text2); }
+.compare-col.hl .compare-title { color:var(--blue-lt); }
+.compare-sub { font-size:9px; color:var(--text3); margin-top:3px; }
+.compare-irr { font-family:var(--mono); font-size:32px; font-weight:700; margin-bottom:4px; }
+.compare-irr-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:14px; }
+.compare-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border2); font-size:11px; }
+.compare-row:last-child { border-bottom:none; }
+.compare-row-label { color:var(--text3); }
+.compare-row-val { font-family:var(--mono); font-weight:600; }
+.lift-badge { display:inline-block; padding:4px 10px; border-radius:20px; font-family:var(--mono); font-size:12px; font-weight:700; margin-top:10px; }
+.lift-pos { background:rgba(52,211,153,0.12); color:var(--green); border:1px solid rgba(52,211,153,0.3); }
+.lift-neg { background:rgba(248,113,113,0.12); color:var(--red); border:1px solid rgba(248,113,113,0.3); }
+
+.metric-grid { display:grid; gap:10px; margin-bottom:14px; }
+.g4 { grid-template-columns:repeat(4,1fr); }
+.mc { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:13px 16px; }
+.mc.hl { background:linear-gradient(135deg,#102a50,#071830); border-color:var(--blue); box-shadow:0 0 20px rgba(59,130,246,0.1); }
+.mc-label { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px; }
+.mc-val { font-family:var(--mono); font-size:17px; font-weight:700; color:var(--text); }
+.mc.hl .mc-val { color:var(--blue-lt); }
+.mc-sub { font-size:10px; color:var(--text3); margin-top:3px; }
+
+.breakdown-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:4px; }
+.breakdown-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px; }
+.breakdown-title { font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:12px; }
+.brow { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border2); font-size:11px; }
+.brow:last-child { border-bottom:none; }
+.brow-label { color:var(--text2); }
+.brow-val { font-family:var(--mono); font-weight:600; }
+
+.proj-wrap { padding:16px 24px; }
+.tscroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; }
+th { padding:8px 10px; font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; font-family:var(--sans); border-bottom:2px solid var(--border); background:var(--panel); text-align:right; white-space:nowrap; }
+th:first-child { text-align:left; }
+td { padding:7px 10px; font-size:11px; font-family:var(--mono); color:#8aaac8; border-bottom:1px solid #081420; text-align:right; }
+td:first-child { text-align:left; color:var(--blue-lt); font-weight:600; }
+tr.even td { background:#061220; } tr.odd td { background:#081830; }
+tr.refi-yr td { background:#1a1200; } tr.post-refi td { background:#07130a; }
+.tnotes { margin-top:12px; padding:12px 14px; background:var(--panel); border:1px solid var(--border2); border-radius:8px; font-size:10px; color:var(--text3); line-height:1.8; }
+
+@media(max-width:768px){
+  .inputs-grid,.compare-grid{grid-template-columns:1fr;}
+  .g4{grid-template-columns:1fr 1fr;}
+  .mode-grid,.refi-sliders,.breakdown-grid{grid-template-columns:1fr;}
+  .cf-stats{grid-template-columns:1fr 1fr;}
+  .repay-wrap,.summary-wrap,.proj-wrap{padding:16px;}
+  .compare-irr{font-size:26px;}
+}
+@media(max-width:480px){ .g4{grid-template-columns:1fr 1fr;} }
+</style>
+
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-eye">Infinite Banking Concept</div>
+  <h1>Policy Loan <em>→</em> Real Estate</h1>
+  <div class="hdr-sub">Model the IBC advantage — your capital works in two places simultaneously</div>
+</div>
+
+<div class="tabs">
+  <button class="tab on"  onclick="showTab('inputs')">Inputs</button>
+  <button class="tab"     onclick="showTab('repayment')">Repayment</button>
+  <button class="tab"     onclick="showTab('summary')">Summary</button>
+  <button class="tab"     onclick="showTab('projection')">Projection</button>
+</div>
+
+<!-- INPUTS -->
+
+<div id="pane-inputs" class="pane on">
+  <div class="inputs-grid">
+    <div class="inp-panel">
+      <div class="inp-title" style="color:#60a5fa">📋 Whole Life Policy</div>
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Enter values from your in-force illustration</div>
+      <div id="s-currentCSV"></div>
+      <div id="s-existingLoan"></div>
+      <div id="s-cvGrowth"></div>
+      <div id="s-annualPremium"></div>
+      <div id="s-loanPct"></div>
+      <div id="s-loanRate"></div>
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><div class="stat-mini-label">Net New Loan</div><div class="stat-mini-val" id="d-loanAmt" style="color:var(--blue-lt)">—</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Annual Loan Cost</div><div class="stat-mini-val" id="d-loanCost" style="color:var(--red)">—</div></div>
+      </div>
+      <div class="stat-mini-grid" style="margin-top:8px">
+        <div class="stat-mini"><div class="stat-mini-label">Gross CSV</div><div class="stat-mini-val" id="d-grosscsv" style="color:var(--blue-lt)">—</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Existing Loan</div><div class="stat-mini-val" id="d-existloan" style="color:var(--red)">—</div></div>
+      </div>
+    </div>
+    </div>
+    <div class="inp-panel">
+      <div class="inp-title" style="color:#34d399">🏠 Property</div>
+      <div id="s-purchasePrice"></div>
+      <div id="s-downPct"></div>
+      <div id="s-mortgageRate"></div>
+      <div id="s-mortgageTerm"></div>
+      <div id="s-appreciation"></div>
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><div class="stat-mini-label">Monthly Mortgage</div><div class="stat-mini-val" id="d-monthlyMort" style="color:var(--text)">—</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Loan Covers Down?</div><div class="stat-mini-val" id="d-coversDown" style="font-size:12px">—</div></div>
+      </div>
+    </div>
+    <div class="inp-panel">
+      <div class="inp-title" style="color:#fbbf24">💰 Rental Income</div>
+      <div id="s-grossRent"></div>
+      <div id="s-expenseRatio"></div>
+      <div id="s-rentGrowth"></div>
+      <div id="s-years"></div>
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><div class="stat-mini-label">Year 1 NOI</div><div class="stat-mini-val" id="d-noi" style="color:var(--text)">—</div></div>
+        <div class="stat-mini"><div class="stat-mini-label">Year 1 Cash Flow</div><div class="stat-mini-val" id="d-cf1">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPAYMENT -->
+
+<div id="pane-repayment" class="pane">
+  <div class="repay-wrap">
+    <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:14px">Choose How You Repay the Policy Loan</div>
+    <div class="mode-grid">
+      <button class="mode-btn on" id="mb-cf" onclick="setMode('cf')">
+        <div class="mode-icon">💵</div>
+        <div class="mode-label">Cash Flow Repayment</div>
+        <div class="mode-desc">Each year, positive cash flow (NOI minus mortgage) automatically sweeps to the policy loan. The property pays your loan back — no out-of-pocket payments.</div>
+      </button>
+      <button class="mode-btn" id="mb-refi" onclick="setMode('refi')">
+        <div class="mode-icon">🏦</div>
+        <div class="mode-label">Cash-Out Refinance</div>
+        <div class="mode-desc">Refi at a target LTV% in a chosen year. Proceeds waterfall: pay off existing mortgage balance → pay off policy loan → any surplus reinvested into your CSV.</div>
+      </button>
+    </div>
+
+```
+<div class="cf-panel" id="panel-cf">
+  <div class="cf-title">💵 How It Works</div>
+  <div class="cf-body">Each year: NOI − Mortgage = surplus. If surplus &gt; $0, it sweeps directly to the policy loan. If negative, interest accrues. No out-of-pocket payments — the tenant repays your loan. Once cleared, all surplus cash flows to you.</div>
+  <div class="cf-stats">
+    <div class="cf-stat"><div class="cf-stat-label">Loan Paid Off</div><div class="cf-stat-val" id="cf-payoff" style="color:var(--green)">—</div></div>
+    <div class="cf-stat"><div class="cf-stat-label">Avg Applied/yr</div><div class="cf-stat-val" id="cf-avg" style="color:#8aaac8">—</div></div>
+    <div class="cf-stat"><div class="cf-stat-label">Remaining Balance</div><div class="cf-stat-val" id="cf-remaining" style="color:var(--amber)">—</div></div>
+  </div>
+</div>
+
+<div class="refi-panel" id="panel-refi" style="display:none">
+  <div class="refi-title">🏦 Cash-Out Refi Settings</div>
+  <div class="refi-sliders">
+    <div>
+      <div id="s-refiYear"></div>
+      <div id="s-refiLTV"></div>
+      <div id="s-postRefiHold"></div>
+    </div>
+    <div>
+      <div id="s-refiRate"></div>
+      <div id="s-refiTerm"></div>
+    </div>
+  </div>
+  <div class="refi-math">
+    <div class="refi-math-title">Refi Waterfall — Year <span id="refi-yr-label">5</span></div>
+    <div class="refi-row"><span class="refi-row-label">Appraised Value at Refi Year</span><span id="rm-appraised" style="color:var(--amber);font-family:var(--mono);font-weight:600">—</span></div>
+    <div class="refi-row"><span class="refi-row-label">× Target LTV</span><span id="rm-ltv" style="color:var(--amber);font-family:var(--mono);font-weight:600">—</span></div>
+    <div class="refi-row"><span class="refi-row-label">= New Mortgage Amount</span><span id="rm-newmort" style="color:var(--amber);font-family:var(--mono);font-weight:600">—</span></div>
+    <div class="refi-row"><span class="refi-row-label">− Existing Mortgage Balance</span><span id="rm-existing" style="color:var(--red);font-family:var(--mono);font-weight:600">—</span></div>
+    <div class="refi-row" style="border-top:1px solid #3a2800;padding-top:8px;margin-top:4px"><span class="refi-row-label" style="color:var(--green);font-weight:600">= Cash-Out Proceeds</span><span id="rm-cashout" style="color:var(--green);font-family:var(--mono);font-weight:700">—</span></div>
+    <div class="refi-row"><span class="refi-row-label">− Policy Loan Balance (+ accrued interest)</span><span id="rm-policybal" style="color:var(--red);font-family:var(--mono);font-weight:600">—</span></div>
+    <div class="refi-row" style="border-top:1px solid #3a2800;padding-top:8px;margin-top:4px"><span class="refi-row-label" style="color:var(--green);font-weight:700">= Surplus → Reinvested to CSV</span><span id="rm-surplus" style="color:var(--green);font-family:var(--mono);font-weight:700">—</span></div>
+    <div class="refi-row" style="padding-top:8px;margin-top:4px"><span class="refi-row-label" style="color:var(--amber)">New Monthly Mortgage P&amp;I</span><span id="rm-newpmt" style="color:var(--amber);font-family:var(--mono);font-weight:600">—</span></div>
+  </div>
+  <div class="refi-warn" id="refi-warn"></div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- SUMMARY -->
+
+<div id="pane-summary" class="pane">
+  <div class="summary-wrap">
+    <div style="font-size:9px;color:var(--blue);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:12px">The IBC Advantage — Capital Working in Two Places at Once</div>
+
+```
+<div class="compare-grid">
+  <div class="compare-col">
+    <div class="compare-hdr">
+      <div class="compare-icon">🏦</div>
+      <div class="compare-title">Leave in Policy</div>
+      <div class="compare-sub">CSV compounds, no real estate</div>
+    </div>
+    <div class="compare-irr" id="irr-policy" style="color:var(--text2)">—</div>
+    <div class="compare-irr-label">IRR incl. ongoing premiums</div>
+    <div class="compare-row"><span class="compare-row-label">Current CSV</span><span class="compare-row-val" id="cp-capital">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">Premiums still owed</span><span class="compare-row-val" id="cp-rate">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">Final CSV value</span><span class="compare-row-val" id="cp-finalcsv">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">Real estate upside</span><span class="compare-row-val" style="color:var(--text3)">None</span></div>
+  </div>
+
+  <div class="compare-col">
+    <div class="compare-hdr">
+      <div class="compare-icon">🏠</div>
+      <div class="compare-title">Cash Into Real Estate</div>
+      <div class="compare-sub">Traditional down payment — no policy</div>
+    </div>
+    <div class="compare-irr" id="irr-cash" style="color:var(--purple)">—</div>
+    <div class="compare-irr-label">IRR on Cash Deployed</div>
+    <div class="compare-row"><span class="compare-row-label">Capital deployed</span><span class="compare-row-val" id="cc-capital">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">CSV still compounding?</span><span class="compare-row-val" style="color:var(--red)">No — capital gone</span></div>
+    <div class="compare-row"><span class="compare-row-label">Final property equity</span><span class="compare-row-val" id="cc-equity">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">Lost CSV compounding</span><span class="compare-row-val" id="cc-opcost" style="color:var(--red)">—</span></div>
+  </div>
+
+  <div class="compare-col hl">
+    <div class="compare-hdr">
+      <div class="compare-icon">⚡</div>
+      <div class="compare-title">IBC — Policy Loan into RE</div>
+      <div class="compare-sub">CSV compounds AND RE returns — simultaneously</div>
+    </div>
+    <div class="compare-irr" id="irr-ibc">—</div>
+    <div class="compare-irr-label">Blended IRR (RE + CSV Growth)</div>
+    <div class="compare-row"><span class="compare-row-label">Capital deployed</span><span class="compare-row-val" id="ci-capital">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">CSV still compounding?</span><span class="compare-row-val" style="color:var(--green)">✅ Yes — full balance</span></div>
+    <div class="compare-row"><span class="compare-row-label">Final property equity</span><span class="compare-row-val" id="ci-equity">—</span></div>
+    <div class="compare-row"><span class="compare-row-label">Net CSV (after loan)</span><span class="compare-row-val" id="ci-csv">—</span></div>
+    <div id="lift-wrap" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="metric-grid g4" id="metric-row1"></div>
+<div class="metric-grid g4" id="metric-row2"></div>
+
+<div class="breakdown-grid">
+  <div class="breakdown-card">
+    <div class="breakdown-title">Year 1 Cash Flow Waterfall</div>
+    <div id="cf-breakdown"></div>
+  </div>
+  <div class="breakdown-card">
+    <div class="breakdown-title">The Double-Compounding Arbitrage</div>
+    <div id="arb-breakdown"></div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<!-- PROJECTION -->
+
+<div id="pane-projection" class="pane">
+  <div class="proj-wrap">
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Yr</th>
+            <th>Gross Rent</th>
+            <th>NOI</th>
+            <th>Mortgage</th>
+            <th>Net CF</th>
+            <th>Policy Loan</th>
+            <th>Policy CSV</th>
+            <th>Net CSV</th>
+            <th>Prop Value</th>
+            <th>Prop Equity</th>
+            <th>Cumul. CF</th>
+          </tr>
+        </thead>
+        <tbody id="proj-tbody"></tbody>
+      </table>
+    </div>
+    <div class="tnotes" id="proj-notes">
+      Policy CSV compounds on the full balance regardless of loan outstanding — verify with your carrier.
+      <span style="color:var(--green)">Green loan = repaid.</span>
+      <span style="color:var(--blue-lt)">Blue = below original.</span>
+      <span style="color:var(--red)">Red = accrued above original.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = {
+  // Policy — user inputs
+  currentCSV:150000, existingLoan:0, cvGrowth:5.0, annualPremium:5000,
+  loanPct:80, loanRate:5.5,
+  // Property
+  purchasePrice:200000, downPct:20, mortgageRate:7.0, mortgageTerm:30, appreciation:3.5,
+  // Rental
+  grossRent:1500, expenseRatio:45, rentGrowth:2.5, years:10,
+  mode:'cf',
+  refiYear:5, refiLTV:75, refiRate:7.0, refiTerm:30, postRefiHold:5,
+};
+
+// Generic CSV projection — simple compound growth on user-entered CSV
+function mmCSV(yearOffset) {
+  return S.currentCSV * Math.pow(1 + S.cvGrowth/100, yearOffset);
+}
+function grossCSVNow() { return S.currentCSV; }
+function loanAvailable() { return Math.max(0, S.currentCSV * S.loanPct/100 - S.existingLoan); }
+
+const fmt  = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(n);
+const fmtp = n => `${(+n).toFixed(2)}%`;
+const fmtx = n => `${(+n).toFixed(2)}x`;
+
+function calcIRR(flows, guess=0.1) {
+  let r=guess;
+  for(let i=0;i<300;i++){
+    let npv=0,d=0;
+    for(let t=0;t<flows.length;t++){
+      npv+=flows[t]/Math.pow(1+r,t);
+      d  -=t*flows[t]/Math.pow(1+r,t+1);
+    }
+    if(Math.abs(d)<1e-12)break;
+    const nr=r-npv/d;
+    if(Math.abs(nr-r)<1e-9)return nr*100;
+    r=isFinite(nr)?nr:guess;
+  }
+  return r*100;
+}
+function safeIRR(f){try{const r=calcIRR(f);return isFinite(r)?r:null;}catch(e){return null;}}
+
+function annualMort(principal,rate,termYrs){
+  if(principal<=0)return 0;
+  const mr=rate/100/12,n=termYrs*12;
+  if(mr===0)return principal/n*12;
+  return principal*(mr*Math.pow(1+mr,n))/(Math.pow(1+mr,n)-1)*12;
+}
+
+function mkSlider({id,key,label,min,max,step,fmt:f,sub}){
+  const el=document.getElementById(id);if(!el)return;
+  const wrap=document.createElement('div');wrap.className='sl-wrap';
+  wrap.innerHTML=`
+    <div class="sl-row"><span class="sl-label">${label}</span><span class="sl-val" id="sv-${key}">${f(S[key])}</span></div>
+    ${sub?`<div class="sl-sub" id="ss-${key}">${sub(S[key])}</div>`:''}
+    <input type="range" id="sl-${key}" min="${min}" max="${max}" step="${step}" value="${S[key]}">`;
+  el.appendChild(wrap);
+  const inp=wrap.querySelector('input');
+  const valEl=wrap.querySelector('.sl-val');
+  const track=v=>{const p=((v-min)/(max-min))*100;inp.style.background=`linear-gradient(to right,var(--blue) 0%,var(--blue) ${p}%,var(--border) ${p}%,var(--border) 100%)`;};
+  track(S[key]);
+  inp.addEventListener('input',e=>{
+    const v=Number(e.target.value);S[key]=v;valEl.textContent=f(v);track(v);
+    const subEl=document.getElementById(`ss-${key}`);if(subEl&&sub)subEl.textContent=sub(v);
+    recalc();
+  });
+}
+
+function simulate(){
+  const loanAmt    = loanAvailable();
+  const downPmt    = S.purchasePrice*S.downPct/100;
+  const origMortBal= S.purchasePrice-downPmt;
+  const origAnnMort= annualMort(origMortBal,S.mortgageRate,S.mortgageTerm);
+  const totalYears = S.mode==='refi'?S.refiYear+S.postRefiHold:S.years;
+
+  const rows=[];
+  let policyLoan=loanAmt, mortBal=origMortBal, curAnnMort=origAnnMort;
+  let cvBonus=0, refiDone=false, refiSnap=null;
+
+  for(let y=1;y<=totalYears;y++){
+    const propVal=S.purchasePrice*Math.pow(1+S.appreciation/100,y);
+    // mortgage amortization
+    const mi=mortBal*(S.mortgageRate/100);
+    const mp=Math.min(curAnnMort-mi,mortBal);
+    mortBal=Math.max(0,mortBal-mp);
+    // rent
+    const rm=Math.pow(1+S.rentGrowth/100,y-1);
+    const grossRentY=S.grossRent*12*rm;
+    const expY=grossRentY*S.expenseRatio/100;
+    const noiY=grossRentY-expY;
+    // CSV — use real MassMutual policy curve (gross, before loans)
+    const csvY = mmCSV(y) + cvBonus;
+    // loan interest
+    const loanInt=policyLoan>0?policyLoan*S.loanRate/100:0;
+
+    let loanPayment=0, refiEvent=null;
+
+    if(S.mode==='cf'){
+      const surplus=noiY-curAnnMort;
+      if(surplus>0&&policyLoan>0){
+        const owed=policyLoan+loanInt;
+        loanPayment=Math.min(surplus,owed);
+        policyLoan=Math.max(0,owed-loanPayment);
+      } else if(policyLoan>0){
+        policyLoan+=loanInt;
+      }
+    } else {
+      if(y<S.refiYear){
+        policyLoan+=loanInt;
+      } else if(y===S.refiYear&&!refiDone){
+        refiDone=true;
+        const appraisedVal=propVal;
+        const newMortAmt=appraisedVal*S.refiLTV/100;
+        const existingMortBal=mortBal+mp;
+        const cashOut=Math.max(0,newMortAmt-existingMortBal);
+        const policyOwed=policyLoan+loanInt;
+        const policyPayoff=Math.min(cashOut,policyOwed);
+        const surplus=Math.max(0,cashOut-policyOwed);
+        cvBonus+=surplus;
+        policyLoan=Math.max(0,policyOwed-policyPayoff);
+        loanPayment=policyPayoff;
+        mortBal=newMortAmt;
+        curAnnMort=annualMort(newMortAmt,S.refiRate,S.refiTerm);
+        refiEvent={appraisedVal,newMortAmt,existingMortBal,cashOut,policyOwed,policyPayoff,surplus};
+        refiSnap=refiEvent;
+      } else if(policyLoan>0){
+        policyLoan+=loanInt;
+      }
+    }
+
+    // Net CF
+    let netCF;
+    if(S.mode==='cf'){
+      const surplus=noiY-curAnnMort;
+      netCF=surplus>0?(surplus-loanPayment):surplus;
+    } else {
+      netCF=noiY-curAnnMort;
+    }
+
+    rows.push({
+      year:y,propVal,mortBal,grossRentY,expY,noiY,csvY,policyLoan,
+      netCF,loanPayment,annMort:curAnnMort,
+      propEquity:propVal-mortBal,netCSV:csvY-policyLoan-S.existingLoan,
+      isRefi:S.mode==='refi'&&y===S.refiYear,
+      isPostRefi:S.mode==='refi'&&y>S.refiYear,
+      refiEvent,
+    });
+  }
+  return{rows,loanAmt,downPmt,origMortBal,origAnnMort,refiSnap,totalYears};
+}
+
+function recalc(){
+  const{rows,loanAmt,downPmt,origMortBal,origAnnMort,refiSnap,totalYears}=simulate();
+  const yr1=rows[0]||{};
+  const last=rows[rows.length-1]||{};
+  const loanIntYr1=loanAmt*S.loanRate/100;
+  const annNOI=S.grossRent*12*(1-S.expenseRatio/100);
+  const grossNow = grossCSVNow();
+  const netAvailable = loanAvailable();
+
+  // INPUTS panel
+  set('d-loanAmt',fmt(netAvailable),'var(--blue-lt)');
+  set('d-loanCost',fmt(loanIntYr1)+'/yr','var(--red)');
+  set('d-monthlyMort',fmt(origAnnMort/12)+'/mo','var(--text)');
+  const covers=netAvailable>=downPmt;
+  set('d-coversDown',covers?'✅ Covers':'⚠️ Short',covers?'var(--green)':'var(--amber)');
+  set('d-noi',fmt(yr1.noiY||annNOI),'var(--text)');
+  set('d-cf1',fmt(yr1.netCF||0),(yr1.netCF||0)>=0?'var(--green)':'var(--red)');
+  // Policy status cards
+  if(document.getElementById('d-grosscsv')) set('d-grosscsv',fmt(grossNow),'var(--blue-lt)');
+  if(document.getElementById('d-existloan')) set('d-existloan',fmt(S.existingLoan),S.existingLoan>0?'var(--red)':'var(--text3)');
+
+  // REPAYMENT
+  if(S.mode==='cf'){
+    let payoffYr=null,totalApplied=0,count=0;
+    rows.forEach(r=>{
+      if(r.loanPayment>0){totalApplied+=r.loanPayment;count++;}
+      if(!payoffYr&&r.policyLoan===0)payoffYr=r.year;
+    });
+    set('cf-payoff',payoffYr?`Year ${payoffYr}`:'Not in hold period',payoffYr?'var(--green)':'var(--amber)');
+    set('cf-avg',count>0?fmt(totalApplied/count):'$0','#8aaac8');
+    set('cf-remaining',fmt(last.policyLoan||0),(last.policyLoan||0)===0?'var(--green)':'var(--amber)');
+  }
+
+  if(S.mode==='refi'&&refiSnap){
+    const{appraisedVal,newMortAmt,existingMortBal,cashOut,policyOwed,policyPayoff,surplus}=refiSnap;
+    setText('refi-yr-label',S.refiYear);
+    set('rm-appraised',fmt(appraisedVal),'var(--amber)');
+    set('rm-ltv',`${S.refiLTV}%`,'var(--amber)');
+    set('rm-newmort',fmt(newMortAmt),'var(--amber)');
+    set('rm-existing',fmt(existingMortBal),'var(--red)');
+    set('rm-cashout',fmt(cashOut),cashOut>0?'var(--green)':'var(--red)');
+    set('rm-policybal',fmt(policyOwed),'var(--red)');
+    set('rm-surplus',fmt(surplus),surplus>0?'var(--green)':'var(--text3)');
+    const newMonthly=annualMort(newMortAmt,S.refiRate,S.refiTerm)/12;
+    set('rm-newpmt',fmt(newMonthly)+'/mo','var(--amber)');
+    const warn=document.getElementById('refi-warn');
+    const ltv=newMortAmt/appraisedVal*100;
+    if(ltv>80){
+      warn.style.display='block';
+      warn.textContent=`⚠️ LTV ${ltv.toFixed(1)}% exceeds 80%. Lenders typically require PMI above 80% or may limit the loan. Consider reducing your target LTV.`;
+    } else if(cashOut<policyOwed){
+      warn.style.display='block';
+      warn.textContent=`⚠️ Cash-out (${fmt(cashOut)}) is less than your policy loan balance (${fmt(policyOwed)}). The ${fmt(policyOwed-cashOut)} shortfall remains on the policy loan post-refi.`;
+    } else { warn.style.display='none'; }
+  }
+
+  // IRR — 1: Leave in policy — proper IRR including ongoing premium outflows
+  // Annual outlay from in-force illustration: $38,910/yr (Years 5-20), $5,910/yr after
+  // We're in Year 5 now. Model premium outflows vs terminal CSV value.
+  // Cost basis = what you've already paid = cumulative premiums to date (~$182K through Yr4)
+  // But for IRR comparison purposes, we model FROM NOW:
+  //   Year 0: 0 (money is already in the policy — sunk cost)
+  //   Years 1-N: -annual premium outlay (ongoing cost to keep it funded)
+  //   Year N: +finalCSV (what you walk away with)
+  // This gives a true "what does continuing to fund this policy earn me" IRR
+  const PREM_ANNUAL_FULL = S.annualPremium || 0;
+  const PREM_ANNUAL_BASE = S.annualPremium || 0;
+  const finalPolicyCSV = mmCSV(totalYears);
+
+  // Policy IRR flows: ongoing premiums as outflows, terminal CSV as inflow
+  const policyFlows = [0]; // Year 0: policy already funded, no new outlay to count as "investment"
+  for(let y=1; y<=totalYears; y++){
+    const prem = PREM_ANNUAL_FULL; // user-entered flat annual premium
+    if(y < totalYears) policyFlows.push(-prem);
+    else policyFlows.push(-prem + finalPolicyCSV);
+  }
+  // If Year 0 is 0 and all flows are negative until terminal, IRR won't solve cleanly.
+  // Better framing: treat ongoing premiums as cost, CSV growth as return on those premiums.
+  // Use CAGR on NET CSV growth only (terminal minus today), net of premium costs.
+  const totalPremsRemaining = (() => {
+    let t=0;
+    for(let y=1;y<=totalYears;y++){
+      t += PREM_ANNUAL_FULL;
+    }
+    return t;
+  })();
+  const policyNetGain = finalPolicyCSV - grossNow - totalPremsRemaining;
+  const policyReturn_irr = safeIRR(policyFlows);
+  // Display: show IRR if solvable, otherwise show net gain context
+  const policyReturn = policyReturn_irr !== null ? policyReturn_irr :
+    (Math.pow(finalPolicyCSV/grossNow, 1/totalYears)-1)*100;
+
+  // IRR — 2: Cash into RE — INDEPENDENT straight buy-and-hold, no refi, same hold period
+  let naiveMortBal=origMortBal;
+  const naiveFlows=[-downPmt];
+  let naiveFinalEquity=0;
+  for(let y=1;y<=totalYears;y++){
+    const propVal=S.purchasePrice*Math.pow(1+S.appreciation/100,y);
+    const mi=naiveMortBal*(S.mortgageRate/100);
+    const mp=Math.min(origAnnMort-mi,naiveMortBal);
+    naiveMortBal=Math.max(0,naiveMortBal-mp);
+    const rentMult=Math.pow(1+S.rentGrowth/100,y-1);
+    const noiY=S.grossRent*12*rentMult*(1-S.expenseRatio/100);
+    const cf=noiY-origAnnMort;
+    const equity=propVal-naiveMortBal;
+    if(y<totalYears) naiveFlows.push(cf);
+    else { naiveFlows.push(cf+equity); naiveFinalEquity=equity; }
+  }
+  const irr_cash=safeIRR(naiveFlows);
+
+  // IRR — 3: IBC — policy loan used as down payment source
+  // The honest comparison: same RE deal, but capital source is policy loan not cash.
+  // Cost basis = down payment (what's actually going into the deal)
+  // The IBC "advantage" is that your cash stays liquid/invested elsewhere — 
+  // but we're comparing apples-to-apples on the RE deal itself.
+  // Drag = annual loan interest reduces net CF vs cash deal.
+  // Terminal = property equity only (CSV is a separate instrument, separate cost basis).
+  const loanIntYr1_ibc = loanAmt * S.loanRate / 100;
+  const ibcFlows = [-downPmt]; // same capital deployed as cash deal
+  rows.forEach((r, i) => {
+    // netCF already accounts for loan interest drag (CF sweep mode) or accrual (refi mode)
+    if(i < rows.length - 1) {
+      ibcFlows.push(r.netCF);
+    } else {
+      // Terminal: property equity + any remaining net cash flow
+      // Policy loan balance is a liability against the policy, not against RE equity
+      ibcFlows.push(r.netCF + r.propEquity);
+    }
+  });
+  const irr_ibc = safeIRR(ibcFlows);
+
+  // Separate: show CSV terminal value as bonus context, not baked into IRR
+  const terminalNetCSV = (last.csvY || 0) - (last.policyLoan || 0) - S.existingLoan;
+
+  const oppCost=downPmt*(Math.pow(1+(policyReturn||5)/100,totalYears)-1);
+  const irrColor=irr_ibc===null?'var(--text3)':irr_ibc>=15?'var(--green)':irr_ibc>=10?'var(--blue-lt)':irr_ibc>=0?'var(--amber)':'var(--red)';
+
+  // THREE-WAY COMPARISON
+  set('irr-policy', policyReturn!==null ? fmtp(policyReturn) : 'N/A', 'var(--text2)');
+  set('cp-capital', fmt(grossNow));
+  set('cp-rate', `+${fmt(totalPremsRemaining)} premiums`);
+  set('cp-finalcsv', fmt(finalPolicyCSV));
+  set('irr-cash',irr_cash!==null?fmtp(irr_cash):'N/A','var(--purple)');
+  set('cc-capital',fmt(downPmt));set('cc-equity',fmt(naiveFinalEquity));
+  set('cc-opcost',`−${fmt(oppCost)}`,'var(--red)');
+  set('irr-ibc',irr_ibc!==null?fmtp(irr_ibc):'N/A',irrColor);
+  set('ci-capital',fmt(downPmt));
+  set('ci-equity',fmt(last.propEquity||0));
+  set('ci-csv',fmt(Math.max(0,terminalNetCSV)),terminalNetCSV>=0?'var(--green)':'var(--red)');
+
+  const liftEl=document.getElementById('lift-wrap');
+  if(irr_ibc!==null&&irr_cash!==null){
+    const lift=irr_ibc-irr_cash;
+    // Small lift = loan interest drag on CF. Negative = IBC costs more than cash deal on RE alone.
+    liftEl.innerHTML=`<span class="lift-badge ${lift>=0?'lift-pos':'lift-neg'}">${lift>=0?'+':''}${fmtp(lift)} vs cash into RE (RE IRR only — CSV upside shown separately)</span>`;
+  } else liftEl.innerHTML='';
+
+  // METRIC CARDS
+  const dscr=(origAnnMort+loanIntYr1)>0?annNOI/(origAnnMort+loanIntYr1):0;
+  const capRate=annNOI/S.purchasePrice*100;
+  const lbFinal=last.policyLoan||0;
+  const lbColor=lbFinal===0?'var(--green)':lbFinal<=loanAmt?'var(--blue-lt)':'var(--red)';
+
+  renderCards('metric-row1',[
+    {label:'Net New Loan Deployed',val:fmt(loanAmt),sub:`${S.loanPct}% of ${fmt(grossNow)} − $78.6K existing`,hl:true},
+    {label:'Year 1 Net Cash Flow',val:fmt(yr1.netCF||0),sub:'After mortgage',color:(yr1.netCF||0)>=0?'var(--green)':'var(--red)'},
+    {label:'Cap Rate',val:fmtp(capRate),sub:'NOI ÷ Purchase price'},
+    {label:'DSCR',val:fmtx(dscr),sub:'NOI ÷ total debt service',color:dscr>=1.25?'var(--green)':dscr>=1?'var(--amber)':'var(--red)'},
+  ]);
+  renderCards('metric-row2',[
+    {label:`${totalYears}-Yr Property Value`,val:fmt(last.propVal||0),sub:`${fmtp(S.appreciation)}/yr`},
+    {label:`${totalYears}-Yr Property Equity`,val:fmt(last.propEquity||0),sub:'Appreciation + paydown'},
+    {label:`${totalYears}-Yr Policy CSV`,val:fmt(last.csvY||0),sub:'Projected at '+S.cvGrowth+'%/yr growth'},
+    {label:`${totalYears}-Yr New Loan Balance`,val:fmt(lbFinal),sub:lbFinal===0?'Fully repaid ✅':lbFinal<=loanAmt?'Below original':'Accrued above original',color:lbColor},
+  ]);
+
+  // BREAKDOWNS
+  const loanSwept=S.mode==='cf'?Math.min(Math.max(0,(yr1.noiY||annNOI)-origAnnMort),loanAmt+loanIntYr1):0;
+  renderRows('cf-breakdown',[
+    ['Gross Rental Income',fmt(yr1.grossRentY||S.grossRent*12),'var(--text)'],
+    ['Operating Expenses',`(${fmt(yr1.expY||0)})`,'var(--red)'],
+    ['Net Operating Income',fmt(yr1.noiY||annNOI),'var(--blue-lt)'],
+    ['Mortgage P&I',`(${fmt(origAnnMort)})`,'var(--red)'],
+    [S.mode==='cf'?'→ Surplus swept to loan':'Loan accrues (refi pays it)',
+      S.mode==='cf'?`(${fmt(loanSwept)})`:'+$0 cash impact','var(--amber)'],
+    ['Net Cash Flow',fmt(yr1.netCF||0),(yr1.netCF||0)>=0?'var(--green)':'var(--red)'],
+  ]);
+
+  // IBC arbitrage: CSV earns at implied rate, loan costs 5.73%
+  const csvGrowthAmt = mmCSV(1) - grossNow;
+  const csvImpliedPct = (csvGrowthAmt / grossNow) * 100;
+  const netSpread = csvGrowthAmt - loanIntYr1;
+  renderRows('arb-breakdown',[
+    ['Your Gross CSV (projected)',fmt(grossNow),'var(--blue-lt)'],
+    ['CSV growth yr 1 (policy curve)',`+${fmtp(csvImpliedPct)} = +${fmt(csvGrowthAmt)}/yr`,'var(--green)'],
+    ['New policy loan costs you',`-${fmtp(S.loanRate)} = -${fmt(loanIntYr1)}/yr`,'var(--red)'],
+    ['Net policy spread',`${netSpread>=0?'+':''}${fmt(netSpread)}/yr`,netSpread>=0?'var(--green)':'var(--red)'],
+    ['RE blended IRR',irr_ibc!==null?fmtp(irr_ibc):'—',irrColor],
+    ['Double-compounding active?',loanAmt>0?'✅ Both engines running':'—','var(--green)'],
+  ]);
+
+  // PROJECTION TABLE
+  const tbody=document.getElementById('proj-tbody');
+  tbody.innerHTML='';
+  let cumCF=0;
+  rows.forEach((r,i)=>{
+    cumCF+=r.netCF;
+    const lb=r.policyLoan||0;
+    const lbC=lb===0?'var(--green)':lb<=loanAmt?'var(--blue-lt)':'var(--red)';
+    const tr=document.createElement('tr');
+    tr.className=r.isRefi?'refi-yr':r.isPostRefi?'post-refi':i%2===0?'even':'odd';
+    tr.innerHTML=`
+      <td style="${r.isRefi?'color:var(--amber)':''}">${r.isRefi?r.year+' 🏦':r.year}</td>
+      <td style="color:#9ab8d8">${fmt(r.grossRentY)}</td>
+      <td style="color:var(--blue-lt)">${fmt(r.noiY)}</td>
+      <td style="color:${r.isRefi||r.isPostRefi?'var(--amber)':'#8aaac8'}">${fmt(r.annMort)}</td>
+      <td style="color:${r.netCF>=0?'var(--green)':'var(--red)'}">${fmt(r.netCF)}</td>
+      <td style="color:${lbC}">${fmt(lb)}</td>
+      <td>${fmt(r.csvY)}</td>
+      <td style="color:${r.netCSV>=0?'#8aaac8':'var(--red)'}">${fmt(r.netCSV)}</td>
+      <td>${fmt(r.propVal)}</td>
+      <td>${fmt(r.propEquity)}</td>
+      <td style="color:${cumCF>=0?'var(--green)':'var(--red)'}">${fmt(cumCF)}</td>`;
+    tbody.appendChild(tr);
+  });
+  const pn=document.getElementById('proj-notes');
+  if(pn) pn.innerHTML=
+    `Policy CSV compounds on full balance regardless of loan (verify with carrier). Net CF = NOI − Mortgage${S.mode==='cf'?' (surplus sweeps to loan)':''}.
+    <span style="color:var(--green)">Green loan = repaid.</span> <span style="color:var(--blue-lt)">Blue = below original.</span> <span style="color:var(--red)">Red = accrued above original.</span>
+    ${S.mode==='refi'?'🏦 = Refi year — mortgage resets; proceeds pay off policy loan. Green rows = post-refi hold.':''}`;
+}
+
+function set(id,text,color){const e=document.getElementById(id);if(!e)return;e.textContent=text;if(color)e.style.color=color;}
+function setText(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
+function renderCards(id,cards){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=cards.map(c=>`
+    <div class="mc ${c.hl?'hl':''}">
+      <div class="mc-label">${c.label}</div>
+      <div class="mc-val" style="color:${c.color||(c.hl?'var(--blue-lt)':'var(--text)')}">${c.val}</div>
+      ${c.sub?`<div class="mc-sub">${c.sub}</div>`:''}
+    </div>`).join('');
+}
+function renderRows(id,rows){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=rows.map(([l,v,c])=>`
+    <div class="brow"><span class="brow-label">${l}</span><span class="brow-val" style="color:${c}">${v}</span></div>`).join('');
+}
+function showTab(name){
+  document.querySelectorAll('.pane').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('on'));
+  document.getElementById(`pane-${name}`).classList.add('on');
+  document.querySelectorAll('.tab').forEach(b=>{if(b.textContent.toLowerCase()===name)b.classList.add('on');});
+}
+function setMode(m){
+  S.mode=m;
+  document.getElementById('mb-cf').classList.toggle('on',m==='cf');
+  document.getElementById('mb-refi').classList.toggle('on',m==='refi');
+  const pcf=document.getElementById('panel-cf');
+  const prefi=document.getElementById('panel-refi');
+  if(pcf)  pcf.style.display  =m==='cf'  ?'block':'none';
+  if(prefi)prefi.style.display=m==='refi'?'block':'none';
+  recalc();
+}
+
+function init(){
+  // Policy sliders — user inputs their own policy data
+  mkSlider({id:'s-currentCSV',key:'currentCSV',label:'Current Cash Surrender Value',min:25000,max:2000000,step:5000,fmt,sub:v=>'From your in-force illustration'});
+  mkSlider({id:'s-existingLoan',key:'existingLoan',label:'Existing Policy Loan Balance',min:0,max:1000000,step:5000,fmt,sub:v=>v>0?'Outstanding loan reduces available equity':'No existing loan'});
+  mkSlider({id:'s-cvGrowth',key:'cvGrowth',label:'Projected CSV Growth Rate',min:2,max:8,step:0.25,fmt:fmtp,sub:v=>'Use guaranteed rate or blended dividend estimate from illustration'});
+  mkSlider({id:'s-annualPremium',key:'annualPremium',label:'Annual Premium',min:0,max:50000,step:500,fmt,sub:v=>'Total yearly outlay — used for policy IRR comparison'});
+  mkSlider({id:'s-loanPct',key:'loanPct',label:'Loan-to-CSV %',min:50,max:95,step:1,fmt:v=>`${v}%`,
+    sub:v=>`Net new available: ${fmt(loanAvailable())} (${v}% of ${fmt(grossCSVNow())}${S.existingLoan>0?' − '+fmt(S.existingLoan)+' existing':''})` 
+  });
+  mkSlider({id:'s-loanRate',key:'loanRate',label:'Policy Loan Rate',min:4,max:8,step:0.25,fmt:fmtp,
+    sub:()=>'Current adjustable rate: 5.73% (resets each policy anniversary)'
+  });
+  mkSlider({id:'s-purchasePrice',key:'purchasePrice',label:'Purchase Price',min:75000,max:700000,step:5000,fmt});
+  mkSlider({id:'s-downPct',key:'downPct',label:'Down Payment %',min:10,max:30,step:1,fmt:v=>`${v}%`,
+    sub:v=>{const dp=S.purchasePrice*v/100,la=loanAvailable();return`${fmt(dp)} needed · ${la>=dp?'✅ Loan covers it':'⚠️ Short by '+fmt(dp-la)}`;}
+  });
+  mkSlider({id:'s-mortgageRate',key:'mortgageRate',label:'Mortgage Rate',min:4,max:12,step:0.125,fmt:fmtp});
+  mkSlider({id:'s-mortgageTerm',key:'mortgageTerm',label:'Mortgage Term',min:15,max:30,step:5,fmt:v=>`${v} yr`});
+  mkSlider({id:'s-appreciation',key:'appreciation',label:'Appreciation Rate',min:0,max:8,step:0.5,fmt:fmtp});
+  mkSlider({id:'s-grossRent',key:'grossRent',label:'Monthly Gross Rent (Yr 1)',min:500,max:5000,step:50,fmt});
+  mkSlider({id:'s-expenseRatio',key:'expenseRatio',label:'Expense Ratio',min:25,max:65,step:1,fmt:v=>`${v}%`,sub:()=>'Vacancy + mgmt + repairs + taxes + insurance'});
+  mkSlider({id:'s-rentGrowth',key:'rentGrowth',label:'Annual Rent Increase',min:0,max:15,step:0.5,fmt:fmtp,
+    sub:v=>v===0?'Static rent modeled':`Rent grows to ${fmt(S.grossRent*Math.pow(1+v/100,S.years-1))}/mo by Year ${S.years}`
+  });
+  mkSlider({id:'s-years',key:'years',label:'Hold Period',min:3,max:25,step:1,fmt:v=>`${v} yr`});
+  mkSlider({id:'s-refiYear',key:'refiYear',label:'Refi in Year',min:1,max:20,step:1,fmt:v=>`Year ${v}`,
+    sub:v=>`Property appreciates for ${v} yr${v>1?'s':''} before refi`});
+  mkSlider({id:'s-refiLTV',key:'refiLTV',label:'Target LTV %',min:50,max:90,step:5,fmt:v=>`${v}%`,
+    sub:v=>{
+      const appr=S.purchasePrice*Math.pow(1+S.appreciation/100,S.refiYear);
+      return`New mortgage ≈ ${fmt(appr*v/100)} on ${fmt(appr)} appraised`;
+    }
+  });
+  mkSlider({id:'s-refiRate',key:'refiRate',label:'Refi Mortgage Rate',min:4,max:12,step:0.125,fmt:fmtp});
+  mkSlider({id:'s-refiTerm',key:'refiTerm',label:'Refi Loan Term',min:10,max:30,step:5,fmt:v=>`${v} yr`});
+  mkSlider({id:'s-postRefiHold',key:'postRefiHold',label:'Hold Years After Refi',min:1,max:15,step:1,fmt:v=>`${v} yr`,
+    sub:v=>`Total hold = Refi Year ${S.refiYear} + ${v} yrs = ${S.refiYear+v} total`});
+  recalc();
+}
+init();
+</script>
+
+</body>
+</html>
